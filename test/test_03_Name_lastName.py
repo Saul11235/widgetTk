@@ -10,8 +10,12 @@ def action():
     print(data)
     widget2.set(data=["hello "+str(data[0][1])+" "+str(data[1][1])])
 
-table=[["Your name"    ,"__Entry__"],
-       ["Your lastname","__Entry__"]]
+table=[[("Your name",)    ,"__Entry__"],
+       [("Your lastname",),""],
+           [([1,2,3],)],
+
+           [([1,2,3],"2")]
+           ]
 
 widget1=widget(window,data=table)
 widget2=widget(window)
@@ -22,3 +26,4 @@ button.pack()
 widget2.pack()
 
 window.mainloop()
+
