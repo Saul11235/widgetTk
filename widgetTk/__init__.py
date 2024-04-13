@@ -158,6 +158,8 @@ class widget(Frame):
                 self.tkvars.append(tkinter.StringVar(value=str(dataTuple[1])))
                 pointer=len(self.tkvars)-1
                 if dataTuple[2]==True:
+                    self.tkvars.append(dataTuple[3])
+                    limite=len(self.tkvars)-1
                     c=Combobox(self,textvariable=self.tkvars[pointer],values=dataTuple[0])
                     c.bind("<<ComboboxSelected>>",dataTuple[3]) #<--- corregir
                     return c
@@ -322,6 +324,7 @@ class menuWidget(Menu):
 
 
 #--------------------------- "
+
 if __name__=="__main__":
     from tkinter import Tk
     from tkinter import Button
@@ -332,6 +335,10 @@ if __name__=="__main__":
         data=widget1.get()
         widget2.set(data=["hello "+str(data[0][1])+" "+str(data[1][1])])
         print("hola")
+
+    def accionCombo(entry):
+        print("accion combo")
+        print("------------------")
 
     diccionarioLabel={
         "type": "Label",
@@ -349,7 +356,7 @@ if __name__=="__main__":
            [([1,2,3],"Activo",True)],
            [([1,2,3],"Desactivo",False) ],
 
-           [([1,2,3],"COMANDO",True,action) ],
+           [([1,2,3],"COMANDO",True,accionCombo) ],
 
 
            [diccionarioLabel,bb],
