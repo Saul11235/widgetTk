@@ -161,7 +161,8 @@ class widget(Frame):
                     self.tkvars.append(dataTuple[3])
                     limite=len(self.tkvars)-1
                     c=Combobox(self,textvariable=self.tkvars[pointer],values=dataTuple[0])
-                    c.bind("<<ComboboxSelected>>",dataTuple[3]) #<--- corregir
+                    def otherfun(voidVar): dataTuple[3]()
+                    c.bind("<<ComboboxSelected>>",otherfun) # [3]) #<--- corregir
                     return c
                 else:
                     return Combobox(self,textvariable=self.tkvars[pointer],values=dataTuple[0],state="disabled")
@@ -336,7 +337,7 @@ if __name__=="__main__":
         widget2.set(data=["hello "+str(data[0][1])+" "+str(data[1][1])])
         print("hola")
 
-    def accionCombo(entry):
+    def accionCombo():
         print("accion combo")
         print("------------------")
 

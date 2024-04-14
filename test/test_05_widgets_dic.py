@@ -13,7 +13,7 @@ if __name__=="__main__":
         widget2.set(data=["hello "+str(data[0][1])+" "+str(data[1][1])])
         print("hola")
 
-    def accionCombo(entry):
+    def accionCombo():
         print("accion combo")
         print("------------------")
 
