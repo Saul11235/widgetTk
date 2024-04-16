@@ -336,10 +336,11 @@ class window(Tk):
         if self.attributes("-fullscreen"): self.attributes("-fullscreen",False)
         else:self.attributes("-fullscreen",True)
 
-    def minimize(self): self.iconify()
+    def minimize(self): self.state("iconic")
     def maximize(self): self.state("zoomed")
     def restore(self):  self.state("normal")
-
+    def run(self):      self.mainloop()
+    def quit(self):     self.destroy()
 
     def getFrame(self): return self.__frame
     def getMenu(self):  return self.__menu
@@ -376,9 +377,37 @@ class window(Tk):
 
     def eventIfClose(self,function):
         self.protocol("WM_DELETE_WINDOW", function)
+
     
 
+class windowTop:
 
+    def __init__(self,master=None,varframe=None,varmenu=None):
+        # is running
+        self.__isrunning=False # True if is running
+        # first vars
+        self.__master=master
+        self.__frame=varframe
+        self.__varmenu=varmenu
+        # resize vars
+        self.__resizable=None  # (True,False)
+        self.__minsize=None    # (200,300)
+        self.__maxsize=None    # (1200,1300)
+        self.__size=None       # (300,300)
+        # window values
+        self.__state="normal"  #  state win
+        self.__nameWin=None
+        self.__iconWin=None
+        self.__fullscreen=False
+        # events
+        self.__events=[]       # all events
+        self.__eventClose=None 
+        # Internal Vars 
+
+
+    def run(self):
+
+        pass
 
 
 
@@ -398,19 +427,24 @@ if __name__=="__main__":
         print("Closing")
         v.destroy()
 
+        
+    def RUNnew():
+        print("sub window")
+        vv.run()
+
 
     v=window()
     v.header("principal")
     miMenu=menuWidget(data=[["opcion1",[("fullscreen",v.fullScreenSwitch,),("minimizar",v.minimize),("restaurar",v.restore),("maximizar",v.maximize)]],"opcion2"])
-    ww=widget(data=[["hola"],["como vamos"],[(("boton Accion",funEnter),),(("Funcion cerrar",funClose),)]])
+    ww=widget(data=[["hola"],["como vamos"],[(("boton Accion",funEnter),),(("Funcion cerrar",funClose),)],[(("ABRIR SUB",RUNnew),)]])
     ww.config(background="red")
     v.set(varframe=ww,varmenu=miMenu)
     v.event("<Control-p>",funEnter)
     v.eventIfClose(funClose)
-    v.fullScreenSwitch()
+    #v.fullScreenSwitch()
 
 
-#    vv=windowTop(master=v)
+    vv=windowTop(master=v)
 #    vv.title("secundario")
 #    miOtroMenu=menuWidget(data=["opcion","otra opcion"])
 #    www=widget(data=[("Hola soy una ventana secundaria")])
