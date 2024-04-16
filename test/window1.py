@@ -1,9 +1,6 @@
 from widgetTk import widget
 import tkinter as tk
 
-def resize(event):
-    # Redimensionar el frame para que coincida con el tamaño de la ventana
-    canvas.itemconfig(frame_id, width=event.width, height=event.height)
 
 if True:
     def action():
@@ -46,6 +43,9 @@ table=[[("Your name",)    ,"Texto"],
 
 
 
+def resize(event):
+    # Redimensionar el frame para que coincida con el tamaño de la ventana
+    canvas.itemconfig(frame_id, width=event.width, height=event.height)
 
 
 # Crear la ventana principal

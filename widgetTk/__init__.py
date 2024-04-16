@@ -1,9 +1,11 @@
-from tkinter import Frame,Label,Entry,Checkbutton,Menu,Button
+from tkinter import Frame,Label,Entry,Checkbutton
+from tkinter import Menu,Button,Tk,PhotoImage  
+from tkinter import Canvas,Toplevel
 from tkinter.ttk import Combobox
 import tkinter
 
 class widget(Frame):
-    def __init__(self,master=None,data=[],vertical=True,split=0,editable=True,static=False,cnf={},**kw):
+    def __init__(self,data=[],vertical=True,split=0,editable=True,static=False,master=None,cnf={},**kw):
         super().__init__(master,cnf,**kw)  # hereda todas las cualidades de Frame
         self.split=split                  # vars to widget
         self.isvertical=vertical
@@ -192,7 +194,6 @@ class widget(Frame):
         else: return Label(self,text="")
 
 
-
     def __makeWidgetFromDict(self,dataDict):
         typeStr="Label" #default
         try:typeStr=dataDict["type"][:]
@@ -239,7 +240,7 @@ class widget(Frame):
 
 class menuWidget(Menu):
 
-    def __init__(self,master=None,data=[],cnf={},**kw):
+    def __init__(self,data=[],master=None,cnf={},**kw):
         super().__init__(master,cnf,**kw)
         self.__data=data
         self.set(self.__data)
@@ -312,10 +313,70 @@ class menuWidget(Menu):
             father.add_command(label="__Error__")
 
 
+class window(Tk):
+
+    def __init__(self,varframe=None,varmenu=None):
+        super().__init__()
+        self.__frame=varframe
+        self.__menu=varmenu
+        self.__functions=[]
+        # canvas to fit window ------
+        self.__canvas=Canvas(self)
+        self.__canvas.pack(fill=tkinter.BOTH,expand=True)
+        self.__frame_id=None
+        self.__packFrame=False
+        #----------------------------
+        self.__PhotoImage=None
+        self.set(self.__frame,self.__menu)
+
+    def __unpackAll(self):
+        pass
+
+    def fullScreenSwitch(self):
+        if self.attributes("-fullscreen"): self.attributes("-fullscreen",False)
+        else:self.attributes("-fullscreen",True)
+
+    def minimize(self): self.iconify()
+    def maximize(self): self.state("zoomed")
+    def restore(self):  self.state("normal")
 
 
+    def getFrame(self): return self.__frame
+    def getMenu(self):  return self.__menu
 
+    def size(self,dimx,dimy):
+        try: self.geometry(str(int(dimx))+"x"+str(int(dimy)))
+        except: pass
 
+    def header(self,title=None,iconPng=None):
+        if title!=None:self.title(str(title))
+        if iconPng!=None:
+            self.__PhotoImage=PhotoImage(master=self,file=str(iconPng))
+            self.iconphoto(False,self.__PhotoImage)
+
+    def set(self,varframe=None,varmenu=None):
+        self.__unpackAll()
+        self.__frame=varframe
+        self.__menu=varmenu
+        if self.__menu!=None:self.config(menu=self.__menu)
+        if self.__frame!=None:
+            self.__packFrame=True
+            self.__frame_id = self.__canvas.create_window((0, 0), window=self.__frame, anchor=tkinter.NW)
+            self.__canvas.bind("<Configure>",self.__resize)
+
+    def event(self,keyEvent,funEnvent):
+        def newFun(event=None): funEnvent()
+        self.__functions.append(newFun)
+        counter=len(self.__functions)-1
+        self.bind(str(keyEvent),self.__functions[counter])
+
+    def __resize(self,event):
+        self.__canvas.itemconfig(self.__frame_id, width=event.width, height=event.height)
+        pass
+
+    def eventIfClose(self,function):
+        self.protocol("WM_DELETE_WINDOW", function)
+    
 
 
 
@@ -330,56 +391,33 @@ if __name__=="__main__":
     from tkinter import Tk
     from tkinter import Button
 
-    window=Tk()
+    def funEnter():
+        print("Enter o ctrl + p")
 
-    def action():
-        data=widget1.get()
-        widget2.set(data=["hello "+str(data[0][1])+" "+str(data[1][1])])
-        print("hola")
-
-    def accionCombo():
-        print("accion combo")
-        print("------------------")
-
-    diccionarioLabel={
-        "type": "Label",
-        "text": "Etiqueta 1",
-        "font": ("Helvetica", 12),
-        "bg": "lightblue",
-        "fg": "black",
-    },
-    bb=(("hola",),)
-
-    table=[[("Your name",)    ,"Texto"],
-       [("Your lastname",),None,""],
-           [([1,2,3],)],
-           [([1,2,3],"2")],
-           [([1,2,3],"Activo",True)],
-           [([1,2,3],"Desactivo",False) ],
-
-           [([1,2,3],"COMANDO",True,accionCombo) ],
+    def funClose():
+        print("Closing")
+        v.destroy()
 
 
-           [diccionarioLabel,bb],
-           [tuple(tuple())],
+    v=window()
+    v.header("principal")
+    miMenu=menuWidget(data=[["opcion1",[("fullscreen",v.fullScreenSwitch,),("minimizar",v.minimize),("restaurar",v.restore),("maximizar",v.maximize)]],"opcion2"])
+    ww=widget(data=[["hola"],["como vamos"],[(("boton Accion",funEnter),),(("Funcion cerrar",funClose),)]])
+    ww.config(background="red")
+    v.set(varframe=ww,varmenu=miMenu)
+    v.event("<Control-p>",funEnter)
+    v.eventIfClose(funClose)
+    v.fullScreenSwitch()
 
-           [ (("Mi boton",),)      ],
-           [ (("Mi boton2",action),)      ],
 
-           [ (("Mi boton2 Activo",action,True),)      ],
+#    vv=windowTop(master=v)
+#    vv.title("secundario")
+#    miOtroMenu=menuWidget(data=["opcion","otra opcion"])
+#    www=widget(data=[("Hola soy una ventana secundaria")])
+#    www.config(background="blue")
+#    vv.set(varframe=www,varmenu=miOtroMenu)
+#    vv.set(varmenu=miOtroMenu)
 
-           [ (("Mi boton2 Inactivo",action,False),)      ],
+    v.mainloop()
 
-
-           ]
-
-    widget1=widget(window,data=table)#,static=True)
-    widget2=widget(window)
-    button=Button(window,text="action",command=action)
-
-    widget1.pack()
-    button.pack()
-    widget2.pack()
-
-    window.mainloop()
 
