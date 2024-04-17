@@ -4,6 +4,8 @@ from tkinter import Canvas,Toplevel
 from tkinter.ttk import Combobox
 import tkinter
 
+#-------------------------------------------------------------------------------
+
 class widget(Frame):
     def __init__(self,data=[],vertical=True,split=0,editable=True,static=False,master=None,cnf={},**kw):
         super().__init__(master,cnf,**kw)  # hereda todas las cualidades de Frame
@@ -122,7 +124,8 @@ class widget(Frame):
             return self.__tupleWidget(var)
         #---------------------------------------------------------
         elif type(var)==list: return widget(self,data=var,vertical=False)
-        else: return Label(self,text="unknow")
+        else:  return var
+            #return Label(self,text="unknow")
         #---------------------------------------------------------
 
 
@@ -219,7 +222,7 @@ class widget(Frame):
         self.rowVar=0
         self.columnVar=0
         for element in self.listOfSubWidgets:
-            element.grid(row=self.rowVar,column=self.columnVar,sticky="nsew")
+            element.grid(in_=self,row=self.rowVar,column=self.columnVar,sticky="nsew")
             self.__newGridCoordinates()
         
     def __newGridCoordinates(self):
@@ -234,9 +237,7 @@ class widget(Frame):
                 self.columnVar=0
                 self.rowVar+=1
 
-  
-
-
+#-------------------------------------------------------------------------------
 
 class menuWidget(Menu):
 
@@ -248,7 +249,8 @@ class menuWidget(Menu):
     def __deleteAll(self):
         self.delete(0,"end")
 
-    def set(self,data=[]):
+    def set(self,data=None):
+        if data==None: data=[]
         self.__deleteAll()
         if type(data)!=list: data=[data]
         for x in data:
@@ -312,6 +314,7 @@ class menuWidget(Menu):
         else:
             father.add_command(label="__Error__")
 
+#-------------------------------------------------------------------------------
 
 class window(Tk):
 
@@ -320,6 +323,9 @@ class window(Tk):
         self.__frame=varframe
         self.__menu=varmenu
         self.__functions=[]
+        self.__enableBind=True
+        self.__autocenter=False
+        self.__isRunning=False
         # canvas to fit window ------
         self.__canvas=Canvas(self)
         self.__canvas.pack(fill=tkinter.BOTH,expand=True)
@@ -336,11 +342,26 @@ class window(Tk):
         if self.attributes("-fullscreen"): self.attributes("-fullscreen",False)
         else:self.attributes("-fullscreen",True)
 
+    def enableBind(self):  self.__enableBind=True
+    def disableBind(self): self.__enableBind=False
+
     def minimize(self): self.state("iconic")
     def maximize(self): self.state("zoomed")
     def restore(self):  self.state("normal")
-    def run(self):      self.mainloop()
+    def run(self):     
+        if self.__autocenter: self.__ProccessCenter()
+        self.__isRunning=True
+        self.mainloop()
+
     def quit(self):     self.destroy()
+
+    def center(self):
+        if self.__isRunning: self.__ProccessCenter()
+        else: self.__autocenter=True
+
+
+    def __ProccessCenter(self):
+        self.eval("tk::PlaceWindow . center")
 
     def getFrame(self): return self.__frame
     def getMenu(self):  return self.__menu
@@ -366,7 +387,8 @@ class window(Tk):
             self.__canvas.bind("<Configure>",self.__resize)
 
     def event(self,keyEvent,funEnvent):
-        def newFun(event=None): funEnvent()
+        def newFun(event=None): 
+            if self.__enableBind:funEnvent()
         self.__functions.append(newFun)
         counter=len(self.__functions)-1
         self.bind(str(keyEvent),self.__functions[counter])
@@ -378,17 +400,21 @@ class window(Tk):
     def eventIfClose(self,function):
         self.protocol("WM_DELETE_WINDOW", function)
 
-    
+#-------------------------------------------------------------------------------
 
 class windowTop:
 
-    def __init__(self,master=None,varframe=None,varmenu=None):
+    def __init__(self,master=None,dataFrame=None,dataMenu=None):
         # is running
-        self.__isrunning=False # True if is running
+        self.__isRunning=False # True if is running
+        self.__enableBind=False
+        # config functions 
+        self.__initialFunction=None
+        self.__endingFunction=None
         # first vars
         self.__master=master
-        self.__frame=varframe
-        self.__varmenu=varmenu
+        self.__dataFrame=dataFrame
+        self.__dataMenu=dataMenu
         # resize vars
         self.__resizable=None  # (True,False)
         self.__minsize=None    # (200,300)
@@ -403,12 +429,160 @@ class windowTop:
         self.__events=[]       # all events
         self.__eventClose=None 
         # Internal Vars 
-
-
-    def run(self):
-
+        self.__canvas=None
+        self.__frame=None
+        self.__menu=None
+        self.__frame_id=None
         pass
 
+    def setInitialFunction(self,function):
+        if str(type(function))=="<class 'function'>": self.__initialFunction=function
+    def setEndingFunction(self,function):
+        if str(type(function))=="<class 'function'>": self.__endingFunction=function
+
+    def header(self,name=None,icon=None):
+        try:
+            if name!=None:self.__nameWin=str(name)
+        except: pass
+        try:
+            if icon!=None:self.__iconWin=str(icon)
+        except: pass
+        if self.__isRunning and type(self.__nameWin)==str:
+            self.windowTop.title(self.__nameWin)
+        if self.__isRunning and type(self.__iconWin)==str:
+            self.windowTop.title(self.__nameWin)
+            self.__PhotoImage=PhotoImage(master=self.windowTop,file=str(self.__iconWin))
+            self.windowTop.iconphoto(False,self.__PhotoImage)
+
+    def resizable(self,x=None,y=None):
+        if type(x)==bool and type(y)==bool:self.__resizable=(x,y)
+        if self.__isRunning: self.windowTop.resizable(*self.__resizable)
+
+    def minsize(self,x=None,y=None):
+        if type(x)==int and type(y)==int:self.__minsize=(x,y)
+        if self.__isRunning:self.windowTop.minsize(*self.__minsize)
+
+    def maxsize(self,x=None,y=None):
+        if type(x)==int and type(y)==int:self.__maxsize=(x,y)
+        if self.__isRunning:self.windowTop.maxsize(*self.__maxsize)
+
+    def setDataMenu(self,dataMenu=None): 
+        self.__dataMenu=dataMenu
+        if self.__isRunning: self.__menu.set(data=self.__dataMenu)
+
+    def setDataFrame(self,dataFrame=None): 
+        self.__dataFrame=dataFrame
+        if self.__isRunning: self.__frame.set(data=self.__dataFrame)
+
+    def __resize(self,event):
+        if self.__isRunning and self.__frame_id!=None:
+            self.__canvas.itemconfig(self.__frame_id,width=event.width,height=event.height)
+
+    def quit(self):
+        if self.__isRunning:
+            self.__isRunning=False
+            self.__enableBind=False
+            self.windowTop.destroy()
+            self.__master.enableBind()
+            self.__master.grab_release()
+            self.__master.focus_set()
+            if self.__endingFunction!=None: self.__endingFunction()
+
+    def run(self):
+        # initial config
+        self.windowTop=Toplevel(self.__master)
+        self.__isRunning=True
+        self.__enableBind=True
+        self.windowTop.grab_set()
+        self.__master.disableBind()
+        self.windowTop.protocol("WM_DELETE_WINDOW",self.quit)
+        self.windowTop.focus_set()
+        # first function
+        if self.__initialFunction!=None: self.__initialFunction()
+        # configuring menu - frame -  canvas
+        self.__menu=menuWidget()
+        self.windowTop.config(menu=self.__menu)
+        self.__canvas=Canvas(master=self.windowTop)
+        self.__canvas.pack(fill=tkinter.BOTH, expand=True)
+        self.__frame=widget(master=self.windowTop)
+        self.__frame.config(background="blue")
+        self.__frame_id = self.__canvas.create_window((0,0),window=self.__frame,anchor=tkinter.NW)
+        self.__canvas.bind("<Configure>",self.__resize)
+        #--config widgets---
+        self.header(self.__nameWin,self.__iconWin)
+        self.setDataMenu(self.__dataMenu)
+        self.setDataFrame(self.__dataFrame)
+        if self.__resizable!=None: self.resizable(*self.__resizable)
+        if self.__minsize!=None:   self.minsize(*self.__minsize)
+        if self.__maxsize!=None:   self.maxsize(*self.__maxsize)
+        #--run object
+        self.windowTop.mainloop()
+
+#-------------------------------------------------------------------------------
+
+from random import randint
+def placeholder(master=None,text=None,lines=None):
+    colors=[ ("red","white"),  ("blue","white"), ("green","white"),("yellow","black"),("pink","black"),("orange","white")]
+    color= colors[randint(0,(len(colors)-1))]
+    texts= ["banana","orange","apple","watermelon"]
+    if text==None:  text=texts[randint(0,len(texts)-1)]
+    if lines==None: lines=1
+    FramePlaceholder=Frame(master)
+    for x in range(lines):
+        l=Label(FramePlaceholder,text=text)
+        l.config(fg=color[1],bg=color[0]);l.pack()
+    FramePlaceholder.config(background=color[0])
+    return FramePlaceholder
+
+#-------------------------------------------------------------------------------
+
+class scrollContainer(Frame):
+
+    def __init__(self,horizontal=True,vertical=True,master=None,cnf={},**kw):
+        super().__init__(master,cnf,**kw)
+        self.__horizontal=horizontal
+        self.__vertical=vertical
+        self.__content=None
+        self.__container=None
+        self.__hscroll=None
+        self.__vscroll=None
+
+    def set(self,content):
+        #--------
+        self.__content=content
+        self.__container=Frame(self)
+        #self.__container.config(background="green")
+        #--------
+        if self.__horizontal:
+            self.__hscroll=tkinter.Scrollbar(self, orient="horizontal")
+            self.__hscroll.pack(side = tkinter.BOTTOM, fill=tkinter.X )
+        if self.__vertical:
+            self.__vscroll=tkinter.Scrollbar(self)
+            self.__vscroll.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+        #-------
+        #self.__container.pack(in_=self,side=tkinter.TOP,fill=tkinter.BOTH,expand=True)
+        #-------
+        self.__content.pack(in_=self.__container,fill=tkinter.BOTH, expand=True)
+
+
+        #self.__content.pack(in_=self,side=tkinter.TOP,fill=tkinter.X)
+        #-------
+        if self.__horizontal:
+            self.__container.config( xscrollcommand =  self.__hscroll.set)
+#        if self.__vertical:
+#            self.__content.config(yscrollcommand = self.__vscroll.set)
+        pass
+
+#-------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
 
 
 
@@ -417,41 +591,17 @@ class windowTop:
 #--------------------------- "
 
 if __name__=="__main__":
-    from tkinter import Tk
-    from tkinter import Button
-
-    def funEnter():
-        print("Enter o ctrl + p")
-
-    def funClose():
-        print("Closing")
-        v.destroy()
-
-        
-    def RUNnew():
-        print("sub window")
-        vv.run()
 
 
     v=window()
-    v.header("principal")
-    miMenu=menuWidget(data=[["opcion1",[("fullscreen",v.fullScreenSwitch,),("minimizar",v.minimize),("restaurar",v.restore),("maximizar",v.maximize)]],"opcion2"])
-    ww=widget(data=[["hola"],["como vamos"],[(("boton Accion",funEnter),),(("Funcion cerrar",funClose),)],[(("ABRIR SUB",RUNnew),)]])
-    ww.config(background="red")
-    v.set(varframe=ww,varmenu=miMenu)
-    v.event("<Control-p>",funEnter)
-    v.eventIfClose(funClose)
-    #v.fullScreenSwitch()
+    s=scrollContainer(v)       
+    v.set(varframe=s)
+
+    pl=placeholder(s,"lolo"*100,100)
+    s.set(pl)
 
 
-    vv=windowTop(master=v)
-#    vv.title("secundario")
-#    miOtroMenu=menuWidget(data=["opcion","otra opcion"])
-#    www=widget(data=[("Hola soy una ventana secundaria")])
-#    www.config(background="blue")
-#    vv.set(varframe=www,varmenu=miOtroMenu)
-#    vv.set(varmenu=miOtroMenu)
-
+    v.header("ejemplo placeholder")
     v.mainloop()
 
 

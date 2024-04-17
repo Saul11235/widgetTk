@@ -23,7 +23,9 @@ if __name__=="__main__":
     v.set(varframe=ww,varmenu=miMenu)
     v.event("<Control-p>",funEnter)
     v.eventIfClose(funClose)
-    v.fullScreenSwitch()
+    #v.fullScreenSwitch()
+    v.center()
+
 
 
 #    vv=windowTop(master=v)
@@ -34,6 +36,6 @@ if __name__=="__main__":
 #    vv.set(varframe=www,varmenu=miOtroMenu)
 #    vv.set(varmenu=miOtroMenu)
 
-    v.mainloop()
+    v.run()
 
 
